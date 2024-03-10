@@ -13,3 +13,23 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
+
+
+model User {
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  pic                 String    @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  password            String
+  otp                 String?   // Optional field
+  OTPExpire           DateTime? // Optional field
+  role                String    @default("admin")
+  status              String    @default("approve")
+  createdAt           DateTime  @default(now())
+  isActive            Boolean   @default(true)
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+}
+
+
+
