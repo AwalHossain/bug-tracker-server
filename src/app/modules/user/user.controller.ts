@@ -5,9 +5,11 @@ import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.services';
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
+  console.log('loginUser', req.body);
+
   const result = await UserService.loginUser(req);
 
-  const { refreshToken } = result;
+  const { refreshToken, ...data } = result;
   // set refresh token into cookie
   const cookieOptions = {
     secure: config.env === 'production',
@@ -20,14 +22,14 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     statusCode: 201,
     success: true,
     message: 'User Logged In Successfully',
-    data: result,
+    data: data,
   });
 });
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   const result = await UserService.registerUser(req);
 
-  const { refreshToken } = result;
+  const { refreshToken, ...data } = result;
   // set refresh token into cookie
   const cookieOptions = {
     secure: config.env === 'production',
@@ -40,7 +42,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
     statusCode: 201,
     success: true,
     message: 'User Registered Successfully',
-    data: result,
+    data: data,
   });
 });
 
