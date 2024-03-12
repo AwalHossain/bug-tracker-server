@@ -1,6 +1,7 @@
 import { Request } from 'express';
 
 import { User } from '@prisma/client';
+import bcrypt from 'bcrypt';
 import { Secret } from 'jsonwebtoken';
 import config from '../../../config';
 import ApiError from '../../../errors/ApiError';
@@ -57,7 +58,7 @@ const loginUser = async (req: Request) => {
   return {
     accessToken,
     refreshToken,
-    user,
+    ...user,
   };
 };
 
@@ -81,6 +82,8 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
     },
   });
 
+  const saltRounds = Number(config.bycrypt_salt_rounds);
+  const hashPass = await bcrypt.hash(password, saltRounds);
   //   findOne({ email, status: 'approve' });
   if (user) {
     throw new ApiError(500, 'User already exist ');
@@ -93,7 +96,7 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
         data: {
           name,
           email,
-          password,
+          password: hashPass,
         },
       });
 
