@@ -46,7 +46,29 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const { refreshToken } = req.cookies;
+
+  const result = await UserService.refreshToken(refreshToken);
+
+  // set refresh token into cookie
+  const cookieOptions = {
+    secure: config.env === 'production',
+    httpOnly: true,
+  };
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: 'Token Refreshed Successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   loginUser,
   registerUser,
+  refreshToken,
 };
