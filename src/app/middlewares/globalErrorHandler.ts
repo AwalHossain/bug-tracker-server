@@ -7,6 +7,7 @@ import ApiError from '../../errors/ApiError';
 import handleValidationError from '../../errors/handleValidationError';
 
 import { Prisma } from '@prisma/client';
+import httpStatus from 'http-status';
 import { ZodError } from 'zod';
 import handleClientError from '../../errors/handleClientEror';
 import handleZodError from '../../errors/handleZodError';
@@ -53,15 +54,30 @@ const globalErrorHandler: ErrorRequestHandler = (
         ]
       : [];
   } else if (error instanceof Error) {
-    message = error?.message;
-    errorMessages = error?.message
-      ? [
-          {
-            path: '',
-            message: error?.message,
-          },
-        ]
-      : [];
+    if (error.message === 'jwt expired') {
+      console.log('jwt expired inside mey', error);
+
+      statusCode = httpStatus.UNAUTHORIZED;
+      message = error.message;
+      errorMessages = error?.message
+        ? [
+            {
+              path: '',
+              message: error?.message,
+            },
+          ]
+        : [];
+    } else {
+      message = error?.message;
+      errorMessages = error?.message
+        ? [
+            {
+              path: '',
+              message: error?.message,
+            },
+          ]
+        : [];
+    }
   }
 
   res.status(statusCode).json({
