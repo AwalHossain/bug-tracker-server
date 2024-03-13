@@ -8,7 +8,7 @@ import ApiError from '../../../errors/ApiError';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import prisma from '../../../shared/prisma';
 import { comparePassword } from '../../../utils/comaprePassword';
-import { ILoginUserResponse } from './user.interface';
+import { ILoginUserResponse, IRefreshTokenResponse } from './user.interface';
 
 const loginUser = async (req: Request) => {
   const { email, password } = req.body;
@@ -164,7 +164,48 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
   };
 };
 
+const refreshToken = async (token: string): Promise<IRefreshTokenResponse> => {
+  // verify refresh token
+
+  let verifyToken = null;
+  try {
+    verifyToken = jwtHelpers.verifyToken(
+      token,
+      config.jwt.refresh_secret as Secret
+    );
+  } catch (error) {
+    throw new ApiError(401, 'Invalid or Expired Refresh Token');
+  }
+
+  const { id, role } = verifyToken;
+
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!isUserExist) {
+    throw new ApiError(401, 'User not found');
+  }
+
+  // create new access token
+  const accessToken = jwtHelpers.createToken(
+    {
+      id,
+      role,
+    },
+    config.jwt.secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  return {
+    accessToken,
+  };
+};
+
 export const UserService = {
   loginUser,
   registerUser,
+  refreshToken,
 };
