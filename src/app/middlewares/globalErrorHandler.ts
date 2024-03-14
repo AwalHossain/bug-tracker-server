@@ -6,7 +6,6 @@ import config from '../../config';
 import ApiError from '../../errors/ApiError';
 import handleValidationError from '../../errors/handleValidationError';
 
-import { Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import { ZodError } from 'zod';
 import handleClientError from '../../errors/handleClientEror';
@@ -27,17 +26,19 @@ const globalErrorHandler: ErrorRequestHandler = (
   let message = 'Something went wrong !';
   let errorMessages: IGenericErrorMessage[] = [];
 
-  if (error instanceof Prisma.PrismaClientValidationError) {
+  if (error.name === 'PrismaClientValidationError') {
     const simplifiedError = handleValidationError(error);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorMessages = simplifiedError.errorMessages;
+
+    console.log('simplifiedError validation', simplifiedError);
   } else if (error instanceof ZodError) {
     const simplifiedError = handleZodError(error);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorMessages = simplifiedError.errorMessages;
-  } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  } else if (error.name === 'PrismaClientKnownRequestError') {
     const simplifiedError = handleClientError(error);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
