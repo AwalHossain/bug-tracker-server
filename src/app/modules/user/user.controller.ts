@@ -67,8 +67,20 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUser = catchAsync(async (req: Request, res: Response) => {
+  const user = await UserService.getUser(req.user?.userId as string);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'User Details',
+    data: user,
+  });
+});
+
 export const UserController = {
   loginUser,
   registerUser,
   refreshToken,
+  getUser,
 };
