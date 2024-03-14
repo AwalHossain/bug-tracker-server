@@ -12,9 +12,16 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   const { refreshToken, ...data } = result;
   // set refresh token into cookie
-  const cookieOptions = {
+  const cookieOptions: {
+    secure: boolean;
+    httpOnly: boolean;
+    maxAge: number;
+    sameSite: 'lax' | 'strict' | 'none' | undefined;
+  } = {
     secure: config.env === 'production',
     httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: 'lax',
   };
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
