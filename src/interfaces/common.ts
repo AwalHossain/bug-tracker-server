@@ -1,3 +1,4 @@
+import { JwtPayload } from 'jsonwebtoken';
 import { IGenericErrorMessage } from './error';
 
 export type IGenericResponse<T> = {
@@ -8,6 +9,11 @@ export type IGenericResponse<T> = {
   };
   data: T;
 };
+
+export type JPayload = {
+  id: string;
+  role: string;
+} & JwtPayload;
 
 export type IGenericErrorResponse = {
   statusCode: number;
