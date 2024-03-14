@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import config from '../../../config';
+import ApiError from '../../../errors/ApiError';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.services';
@@ -68,7 +69,14 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
-  const user = await UserService.getUser(req.user?.userId as string);
+  const userId = req.user?.id as string;
+  console.log('userId', userId);
+
+  if (!userId) {
+    throw new ApiError(401, 'Unauthorized');
+  }
+
+  const user = await UserService.getUser(userId);
 
   sendResponse(res, {
     statusCode: 200,
