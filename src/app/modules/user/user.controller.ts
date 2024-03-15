@@ -16,12 +16,11 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     secure: boolean;
     httpOnly: boolean;
     maxAge: number;
-    sameSite: 'lax' | 'strict' | 'none' | undefined;
+    sameSite?: 'lax' | 'strict' | 'none' | undefined;
   } = {
-    secure: false, //config.env === 'production',
+    secure: config.env === 'production',
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    sameSite: 'none',
   };
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
