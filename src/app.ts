@@ -5,13 +5,14 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import routes from './app/routes';
 
 import cookieParser from 'cookie-parser';
-import config from './config';
 
 const app: Application = express();
 
+const allowedOrigins = ['https://localhost:3000'];
+
 app.use(
   cors({
-    origin: config.client_url || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   })
 );
