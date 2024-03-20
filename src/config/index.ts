@@ -16,4 +16,8 @@ export default {
     expires_in: process.env.JWT_EXPIRES_IN,
     refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   },
+  invitation: {
+    expires_in: process.env.INVITATION_EXPIRES_IN,
+    secret: process.env.INVITATION_SECRET,
+  },
 };
