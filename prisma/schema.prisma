@@ -14,22 +14,135 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+// This is your Prisma schema file
 
 model User {
-  id                  String    @id @default(uuid())
-  name                String
-  email               String    @unique
-  pic                 String    @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
-  password            String
-  otp                 String?   // Optional field
-  OTPExpire           DateTime? // Optional field
-  role                String    @default("admin")
-  status              String    @default("approve")
-  createdAt           DateTime  @default(now())
-  isActive            Boolean   @default(true)
-  resetPasswordToken  String?
-  resetPasswordExpire DateTime?
+  id                String            @id @default(uuid())
+  name              String
+  email             String            @unique
+  password          String
+  role              String    @default("admin")
+  createdWorkspaces Workspace[]       @relation("CreatedWorkspaces")
+  workspaceMembers  WorkspaceMember[]
+  createdIssues     Issue[]
+  assignedIssues    Issue[]           @relation("AssignedIssues")
+  comments          Comment[]
+  issueHistories    IssueHistory[]
+  invitedWorkspaces Invitation[]      @relation("InvitedWorkspaces")
 }
 
+model Workspace {
+  id          String            @id @default(uuid())
+  name        String
+  createdBy   User              @relation("CreatedWorkspaces", fields: [createdById], references: [id])
+  createdById String
+  members     WorkspaceMember[]
+  issues      Issue[]
+  projects    Project[]
+  Invitation  Invitation[]
+}
 
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  role        String
+}
 
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  invitedBy   User      @relation("InvitedWorkspaces", fields: [invitedById], references: [id])
+  invitedById String
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+}
+
+model Issue {
+  id           String         @id @default(uuid())
+  title        String
+  description  String         @db.Text
+  status       String
+  priority     String
+  severity     String
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  createdById  String
+  assignedTo   User?          @relation("AssignedIssues", fields: [assignedToId], references: [id])
+  assignedToId String?
+  deadline     DateTime?
+  project      Project?       @relation(fields: [projectId], references: [id])
+  projectId    String?
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  comments     Comment[]
+  attachments  Attachment[]
+  issueHistory IssueHistory[]
+  issueLabels  IssueLabel[]
+}
+
+model Comment {
+  id          String @id @default(uuid())
+  content     String @db.Text
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+  issue       Issue  @relation(fields: [issueId], references: [id])
+  issueId     String
+}
+
+model Attachment {
+  id       String @id @default(uuid())
+  filePath String
+  issue    Issue  @relation(fields: [issueId], references: [id])
+  issueId  String
+}
+
+model IssueHistory {
+  id           String   @id @default(uuid())
+  issue        Issue    @relation(fields: [issueId], references: [id])
+  issueId      String
+  changedBy    User     @relation(fields: [changedById], references: [id])
+  changedById  String
+  fieldChanged String
+  oldValue     String?
+  newValue     String?
+  changedAt    DateTime @default(now())
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  name        String
+  description String      @db.Text
+  dueDate     DateTime?
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  issues      Issue[]
+  milestones  Milestone[]
+}
+
+model Milestone {
+  id          String    @id @default(uuid())
+  name        String
+  description String    @db.Text
+  dueDate     DateTime?
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   String
+}
+
+model Label {
+  id          String       @id @default(uuid())
+  name        String
+  color       String?
+  issueLabels IssueLabel[]
+}
+
+model IssueLabel {
+  id      String @id @default(uuid())
+  issue   Issue  @relation(fields: [issueId], references: [id])
+  issueId String
+  label   Label  @relation(fields: [labelId], references: [id])
+  labelId String
+}
