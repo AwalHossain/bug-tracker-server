@@ -15,12 +15,11 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   const cookieOptions: {
     secure: boolean;
     httpOnly: boolean;
-    maxAge: number;
+    maxAge?: number;
     sameSite?: 'lax' | 'strict' | 'none' | undefined;
   } = {
     secure: config.env === 'production',
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
