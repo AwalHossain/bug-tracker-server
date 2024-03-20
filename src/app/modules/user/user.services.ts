@@ -78,7 +78,6 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
   const user = await prisma.user.findFirst({
     where: {
       email,
-      status: 'approve',
     },
   });
 
