@@ -60,7 +60,37 @@ model Invitation {
   invitedById String
   createdAt   DateTime  @default(now())
   acceptedAt  DateTime?
+  status      Status    @default(PENDING)
 }
+
+enum Status {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum IssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum IssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum IssueSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+
 
 model Issue {
   id           String         @id @default(uuid())
