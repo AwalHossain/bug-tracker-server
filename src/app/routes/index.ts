@@ -1,5 +1,7 @@
 import express from 'express';
+import { InvitationRoutes } from '../modules/invitation/invitation.rotues';
 import { UserRoutes } from '../modules/user/user.routes';
+import { WorkspaceRoutes } from '../modules/workspace/workspace.rotues';
 
 const router = express.Router();
 
@@ -11,11 +13,11 @@ const moduleRoutes = [
   },
   {
     path: '/workspace',
-    route: UserRoutes,
+    route: WorkspaceRoutes,
   },
   {
     path: '/invitation',
-    route: UserRoutes,
+    route: InvitationRoutes,
   },
 ];
 
