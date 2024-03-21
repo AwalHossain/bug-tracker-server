@@ -23,6 +23,11 @@ const getAllWorkspace = async (req: Request) => {
         id: req.user.id,
       },
     },
+    include: {
+      createdBy: true,
+      Invitation: true,
+      members: true,
+    },
   });
 
   return result;
