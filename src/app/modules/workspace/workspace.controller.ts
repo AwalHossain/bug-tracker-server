@@ -1,21 +1,10 @@
 import { Request, Response } from 'express';
-import { generateInvitationLink } from '../../../helpers/generateInvitationlink';
+import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
+import { WorkspaceService } from './workspace.services';
 
-const createInvitation = async (req: Request, res: Response) => {
-  const baseUrl = req.protocol + '://' + req.get('host');
-  const workspaceId = req.body.workspaceId;
-  const email = req.body.email.split(',');
-  const invitedById = req.user.id;
-  let result;
-  for (let i = 0; i < email.length; i++) {
-    result = generateInvitationLink({
-      baseUrl,
-      email: email[i],
-      workspaceId,
-      invitedById,
-    });
-  }
+const createWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.createWorkspace(req);
 
   sendResponse(res, {
     statusCode: 201,
@@ -23,8 +12,56 @@ const createInvitation = async (req: Request, res: Response) => {
     message: 'Workpac Created Successfully',
     data: result,
   });
-};
+});
 
-export const InvitationController = {
-  createInvitation,
+const updateWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.updateWorkspace(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Workpac Updated Successfully',
+    data: result,
+  });
+});
+
+const getOneWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.getOneWorkspace(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Workpac Details',
+    data: result,
+  });
+});
+
+const deleteWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.deleteWorkspace(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Workpac Deleted Successfully',
+    data: result,
+  });
+});
+
+const getAllWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.getAllWorkspace(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Workpac Details',
+    data: result,
+  });
+});
+
+export const WorkspaceController = {
+  createWorkspace,
+  updateWorkspace,
+  getOneWorkspace,
+  deleteWorkspace,
+  getAllWorkspace,
 };
