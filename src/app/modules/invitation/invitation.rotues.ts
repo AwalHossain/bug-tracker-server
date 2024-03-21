@@ -1,16 +1,16 @@
 import { Router } from 'express';
-import { WorkspaceController } from './invitation.controller';
+import { ENUM_USER_ROLE } from '../../../enums/user';
+import auth from '../../middlewares/auth';
+import { InvitationController } from './invitation.controller';
 
 const router = Router();
 
-router.post('/create', WorkspaceController.createWorkspace);
+router.post(
+  '/create',
+  auth(ENUM_USER_ROLE.ADMIN),
+  InvitationController.createInvitation
+);
 
-router.get('/get-all', WorkspaceController.getAllWorkspace);
+router.get('/check/teamInvitation', InvitationController.checkInvitation);
 
-router.get('/get-one/:id', WorkspaceController.getOneWorkspace);
-
-router.put('/update/:id', WorkspaceController.updateWorkspace);
-
-router.delete('/delete/:id', WorkspaceController.deleteWorkspace);
-
-export const WorkspaceRoutes = router;
+export const InvitationRoutes = router;
