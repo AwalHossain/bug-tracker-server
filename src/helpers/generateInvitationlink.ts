@@ -15,6 +15,7 @@ export const generateInvitationLink = ({
   invitedById,
 }: URLProps) => {
   const url = new URL(baseUrl);
+  url.pathname = '/check/teamInvitation';
   const token = jwtHelpers.createToken(
     {
       workspaceId,
