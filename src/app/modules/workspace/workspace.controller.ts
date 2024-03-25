@@ -36,6 +36,17 @@ const getOneWorkspace = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const joinWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const result = await WorkspaceService.joinWorkspace(req);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Workpac Joined Successfully',
+    data: result,
+  });
+});
+
 const deleteWorkspace = catchAsync(async (req: Request, res: Response) => {
   const result = await WorkspaceService.deleteWorkspace(req);
 
@@ -64,4 +75,5 @@ export const WorkspaceController = {
   getOneWorkspace,
   deleteWorkspace,
   getAllWorkspace,
+  joinWorkspace,
 };
