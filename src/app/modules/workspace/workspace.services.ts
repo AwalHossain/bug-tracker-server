@@ -2,10 +2,29 @@ import { Request } from 'express';
 import prisma from '../../../shared/prisma';
 
 const createWorkspace = async (req: Request) => {
+  console.log(req.body, 'req.user.id', req.user.id);
+
   const result = await prisma.workspace.create({
     data: {
       name: req.body.name,
       createdBy: {
+        connect: {
+          id: req.user.id,
+        },
+      },
+    },
+  });
+
+  return result;
+};
+
+const joinWorkspace = async (req: Request) => {
+  const result = await prisma.workspace.update({
+    where: {
+      id: req.params.id,
+    },
+    data: {
+      members: {
         connect: {
           id: req.user.id,
         },
@@ -72,4 +91,5 @@ export const WorkspaceService = {
   getOneWorkspace,
   updateWorkspace,
   deleteWorkspace,
+  joinWorkspace,
 };
