@@ -1,4 +1,5 @@
 import { JwtPayload } from 'jsonwebtoken';
+import prisma from '../shared/prisma';
 import { IGenericErrorMessage } from './error';
 
 export type IGenericResponse<T> = {
@@ -20,3 +21,8 @@ export type IGenericErrorResponse = {
   message: string;
   errorMessages: IGenericErrorMessage[];
 };
+
+export type PrismaTransactionalClient = Omit<
+  typeof prisma,
+  '$extends' | '$transaction' | '$disconnect' | '$connect' | '$on' | '$use'
+>;
