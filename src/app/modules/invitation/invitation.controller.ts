@@ -22,7 +22,7 @@ const checkInvitation = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'Workpac Details',
+    message: 'Workspace Details',
     data: result,
   });
 });
