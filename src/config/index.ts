@@ -20,4 +20,11 @@ export default {
     expires_in: process.env.INVITATION_EXPIRES_IN,
     secret: process.env.INVITATION_SECRET,
   },
+  mail: {
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    secure: process.env.MAIL_SECURE,
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
 };
