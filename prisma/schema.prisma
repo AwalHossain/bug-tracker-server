@@ -49,6 +49,8 @@ model WorkspaceMember {
   user        User      @relation(fields: [userId], references: [id])
   userId      String
   role        String
+
+  @@unique([workspaceId, userId])
 }
 
 model Invitation {
