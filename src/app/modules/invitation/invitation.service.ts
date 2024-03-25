@@ -1,9 +1,12 @@
 import { Request } from 'express';
+import config from '../../../config';
+import ApiError from '../../../errors/ApiError';
 import { generateInvitationLink } from '../../../helpers/generateInvitationlink';
+import sendMail from '../../../helpers/sendMail';
 import prisma from '../../../shared/prisma';
 
 const createInvitation = async (req: Request) => {
-  const baseUrl = req.protocol + '://' + req.get('host');
+  const baseUrl = `${config.client_url}/invitation`;
   const workspaceId = req.body.workspaceId;
   const emailList = req.body.email.split(/[ ,]+/);
   const invitedById = req.user.id;
@@ -25,6 +28,8 @@ const createInvitation = async (req: Request) => {
       invitedById,
     });
 
+    await sendMail(email, 'Invitation to join workspace');
+
     result.push({ invitation, send });
   }
   return result;
@@ -38,11 +43,18 @@ const checkInvitation = async (req: Request) => {
     throw new Error('Invalid invitation link');
   }
 
+  //   first check if user is already signed up
   const user = await prisma.user.findFirst({
     where: {
       email: email.toString(),
     },
   });
+
+  //   if user not signed up, then sign them up and add them to the workspace
+
+  if (!user) {
+    throw new ApiError(401, 'User not signed up');
+  }
 
   console.log(user, 'check invitation');
 
@@ -61,10 +73,10 @@ const checkInvitation = async (req: Request) => {
   console.log(workspace, 'check workspace');
 
   if (workspace) {
-    throw new Error('User already in the workspace');
+    throw new ApiError(200, 'User already in the workspace');
   }
 
-  // If the user is not already a member of the workspace, add them to the workspace
+  // If the user is not already signed up , add them to the workspace
 
   if (user && !workspace) {
     const newWorkspaceMember = await prisma.workspaceMember.create({
