@@ -35,4 +35,10 @@ router.delete(
   WorkspaceController.deleteWorkspace
 );
 
+router.put(
+  '/join/:id',
+  auth(ENUM_USER_ROLE.ADMIN),
+  WorkspaceController.joinWorkspace
+);
+
 export const WorkspaceRoutes = router;
