@@ -8,48 +8,95 @@ import ApiError from '../../../errors/ApiError';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import prisma from '../../../shared/prisma';
 import { comparePassword } from '../../../utils/comaprePassword';
+import { addUserToWorkspace, createUser } from '../../services/auth.service';
 import { ILoginUserResponse, IRefreshTokenResponse } from './user.interface';
 
 const loginUser = async (req: Request) => {
-  const { email, password } = req.body;
+  const { email, password, token } = req.body;
+  const { invitedById, workspaceId } = jwtHelpers.decodeToken(token) || {};
 
   // checking if user has given password and email both
-
   if (!email || !password) {
     throw new ApiError(400, 'Please Enter Email & Password');
   }
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: {
       email,
     },
+    include: {
+      createdWorkspaces: true,
+    },
   });
 
-  console.log(user);
-  // await Users.findOne({ email }).select('+password');
+  console.log('user checking in', user?.email, user?.password);
 
   if (!user) {
-    throw new ApiError(401, 'Invalid email or password');
+    console.log('Inside auth', user);
+    throw new ApiError(401, 'Invalid email');
   }
 
   const isPasswordMatched = await comparePassword(password, user.password);
 
   if (!isPasswordMatched) {
-    throw new ApiError(401, 'Invalid email or password');
+    console.log(isPasswordMatched, 'isPasswordMatched');
+    throw new ApiError(401, 'Invalid email or password no valid');
   }
+
+  if (workspaceId && token) {
+    const checkWorkspace = await prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+        members: {
+          some: {
+            userId: user?.id,
+          },
+        },
+      },
+    });
+
+    console.log(checkWorkspace, 'checkWorkspace');
+
+    // check if it has valid token and workspaceId, if so then join this user in the Workspace
+    if (token && user && !checkWorkspace) {
+      await prisma.$transaction(async tx => {
+        const workspaceData = {
+          id: workspaceId,
+          userId: user!.id,
+          invitedById,
+        };
+
+        await addUserToWorkspace({ tx, workspaceData });
+      });
+    }
+  }
+
+  user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+    include: {
+      createdWorkspaces: true,
+      workspaceMembers: {
+        include: {
+          workspace: true,
+        },
+      },
+    },
+  });
 
   const accessToken = jwtHelpers.createToken(
     {
-      id: user.id,
-      role: user.role,
+      id: user?.id,
+      role: user?.role,
     },
     config.jwt.secret as Secret,
     config.jwt.expires_in as string
   );
   const refreshToken = jwtHelpers.createToken(
     {
-      id: user.id,
-      role: user.role,
+      id: user?.id,
+      role: user?.role,
     },
     config.jwt.refresh_secret as Secret,
     config.jwt.refresh_expires_in as string
@@ -63,16 +110,10 @@ const loginUser = async (req: Request) => {
 };
 
 const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
-  const { token, projectId } = req.query;
+  const { name, email, password, token } = req.body;
+  const { invitedById, workspaceId } = jwtHelpers.decodeToken(token) || {};
 
-  console.log(token, projectId, 'cehc');
-
-  // const checkInvitation = await inviteUser.findOne({
-  //     token,
-  //     expireToken: { $gt: Date.now() },
-  // });
-
-  const { name, email, password } = req.body;
+  console.log(password, 'password in registerUser');
 
   // Checking the if the user already approve or not yet regitered
   const user = await prisma.user.findFirst({
@@ -83,78 +124,102 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
 
   const saltRounds = Number(config.bycrypt_salt_rounds);
   const hashPass = await bcrypt.hash(password, saltRounds);
+  console.log(
+    config.bycrypt_salt_rounds,
+    'config.bycrypt_salt_rounds',
+    hashPass
+  );
   //   findOne({ email, status: 'approve' });
   if (user) {
     throw new ApiError(500, 'User already exist ');
   }
-
+  const userData = {
+    name,
+    email,
+    password: hashPass,
+  };
   // Use try catch cause of async fn, to detect unnecessay bug easily
-  try {
-    if (!user) {
-      const newUser = await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashPass,
+
+  if (!user) {
+    let newUser;
+    // Push project Id into User
+    // console.log(checkInvitation);
+
+    if (workspaceId) {
+      const checkWorkspace = await prisma.workspace.findFirst({
+        where: {
+          id: workspaceId,
         },
       });
 
-      // Push project Id into User
-      // console.log(checkInvitation);
-      const id = newUser.id;
-      console.log(id, 'userId');
-      // if (checkInvitation) {
-      //     let updateUser = await User.updateOne(
-      //         { email: newUser.email },
+      // check if it has valid token and workspaceId, if so then join this user in the Workspace
+      if (checkWorkspace && token) {
+        await prisma.$transaction(async tx => {
+          newUser = await createUser({ tx, userData });
 
-      //         {
-      //             $push: {
-      //                 projects: { projectId: projectId, role: role },
-      //             },
-      //         },
-      //     );
+          console.log('New user checking ', newUser);
 
-      //     const updateProject = await Project.updateOne(
-      //         {
-      //             _id: projectId,
-      //         },
-      //         {
-      //             $push: {
-      //                 assignedPeople: { assignedUser: newUser._id, role: role },
-      //             },
-      //         },
-      //     );
-      //     console.log(updateProject, 'updaet project');
-      // }
+          const workspaceData = {
+            id: workspaceId,
+            userId: newUser.id,
+            invitedById,
+          };
 
-      const accessToken = jwtHelpers.createToken(
-        {
-          id: newUser.id,
-          role: newUser.role,
+          await addUserToWorkspace({ tx, workspaceData });
+        });
+      }
+    } else {
+      newUser = await prisma.user.create({
+        data: userData,
+        include: {
+          createdWorkspaces: true,
+          workspaceMembers: {
+            include: {
+              workspace: true,
+            },
+          },
         },
-        config.jwt.secret as Secret,
-        config.jwt.expires_in as string
-      );
-      const refreshToken = jwtHelpers.createToken(
-        {
-          id: newUser.id,
-          role: newUser.role,
-        },
-        config.jwt.refresh_secret as Secret,
-        config.jwt.refresh_expires_in as string
-      );
-
-      return {
-        accessToken,
-        refreshToken,
-        user: newUser,
-      };
+      });
     }
-  } catch (err) {
-    // if there is any error happened otp and expire date will be undefined
-    console.log(err);
-    throw new ApiError(500, 'Internal Server Error');
+
+    const nUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+      include: {
+        createdWorkspaces: true,
+        workspaceMembers: {
+          include: {
+            workspace: true,
+          },
+        },
+      },
+    });
+
+    const accessToken = jwtHelpers.createToken(
+      {
+        id: nUser?.id,
+        role: nUser?.role,
+      },
+      config.jwt.secret as Secret,
+      config.jwt.expires_in as string
+    );
+    const refreshToken = jwtHelpers.createToken(
+      {
+        id: nUser?.id,
+        role: nUser?.role,
+      },
+      config.jwt.refresh_secret as Secret,
+      config.jwt.refresh_expires_in as string
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      ...nUser,
+    };
   }
+
   // Add this return statement to return a default value
   return {
     accessToken: '',
