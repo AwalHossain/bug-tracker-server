@@ -265,11 +265,21 @@ const getUser = async (id: string) => {
     where: {
       id,
     },
+    include: {
+      createdWorkspaces: true,
+      workspaceMembers: {
+        include: {
+          workspace: true,
+        },
+      },
+    },
   });
 
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
+
+  // const workspaces = user?.workspaceMembers.map(member => member.workspace);
 
   return user;
 };
