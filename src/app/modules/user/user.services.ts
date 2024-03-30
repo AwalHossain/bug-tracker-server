@@ -43,32 +43,30 @@ const loginUser = async (req: Request) => {
     throw new ApiError(401, 'Invalid email or password no valid');
   }
 
-  if (workspaceId && token) {
-    const checkWorkspace = await prisma.workspace.findFirst({
-      where: {
-        id: workspaceId,
-        members: {
-          some: {
-            userId: user?.id,
-          },
+  const checkWorkspace = await prisma.workspace.findFirst({
+    where: {
+      id: workspaceId,
+      members: {
+        some: {
+          userId: user?.id,
         },
       },
+    },
+  });
+
+  console.log(checkWorkspace, 'checkWorkspace');
+
+  // check if it has valid token and workspaceId, if so then join this user in the Workspace
+  if (token && user && !checkWorkspace) {
+    await prisma.$transaction(async tx => {
+      const workspaceData = {
+        id: workspaceId,
+        userId: user!.id,
+        invitedById,
+      };
+
+      await addUserToWorkspace({ tx, workspaceData });
     });
-
-    console.log(checkWorkspace, 'checkWorkspace');
-
-    // check if it has valid token and workspaceId, if so then join this user in the Workspace
-    if (token && user && !checkWorkspace) {
-      await prisma.$transaction(async tx => {
-        const workspaceData = {
-          id: workspaceId,
-          userId: user!.id,
-          invitedById,
-        };
-
-        await addUserToWorkspace({ tx, workspaceData });
-      });
-    }
   }
 
   user = await prisma.user.findUnique({
@@ -124,12 +122,8 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
 
   const saltRounds = Number(config.bycrypt_salt_rounds);
   const hashPass = await bcrypt.hash(password, saltRounds);
-  console.log(
-    config.bycrypt_salt_rounds,
-    'config.bycrypt_salt_rounds',
-    hashPass
-  );
-  //   findOne({ email, status: 'approve' });
+  console.log(user, 'user checking from regis');
+
   if (user) {
     throw new ApiError(500, 'User already exist ');
   }
@@ -145,29 +139,27 @@ const registerUser = async (req: Request): Promise<ILoginUserResponse> => {
     // Push project Id into User
     // console.log(checkInvitation);
 
-    if (workspaceId) {
-      const checkWorkspace = await prisma.workspace.findFirst({
-        where: {
+    const checkWorkspace = await prisma.workspace.findFirst({
+      where: {
+        id: workspaceId,
+      },
+    });
+
+    // check if it has valid token and workspaceId, if so then join this user in the Workspace
+    if (checkWorkspace && token) {
+      await prisma.$transaction(async tx => {
+        newUser = await createUser({ tx, userData });
+
+        console.log('New user checking ', newUser);
+
+        const workspaceData = {
           id: workspaceId,
-        },
+          userId: newUser.id,
+          invitedById,
+        };
+
+        await addUserToWorkspace({ tx, workspaceData });
       });
-
-      // check if it has valid token and workspaceId, if so then join this user in the Workspace
-      if (checkWorkspace && token) {
-        await prisma.$transaction(async tx => {
-          newUser = await createUser({ tx, userData });
-
-          console.log('New user checking ', newUser);
-
-          const workspaceData = {
-            id: workspaceId,
-            userId: newUser.id,
-            invitedById,
-          };
-
-          await addUserToWorkspace({ tx, workspaceData });
-        });
-      }
     } else {
       newUser = await prisma.user.create({
         data: userData,
