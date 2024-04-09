@@ -1,4 +1,6 @@
 import { Request } from 'express';
+import httpStatus from 'http-status';
+import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createWorkspace = async (req: Request) => {
@@ -12,6 +14,24 @@ const createWorkspace = async (req: Request) => {
           id: req.user.id,
         },
       },
+      members: {
+        connectOrCreate: {
+          where: {
+            id: req.user.id,
+          },
+          create: {
+            role: 'ADMIN',
+            user: {
+              connect: {
+                id: req.user.id,
+              },
+            },
+          },
+        },
+      },
+    },
+    include: {
+      members: true,
     },
   });
 
@@ -57,7 +77,14 @@ const getOneWorkspace = async (req: Request) => {
     where: {
       id: req.params.id,
     },
+    include: {
+      members: true,
+    },
   });
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Workspace not found');
+  }
 
   return result;
 };
